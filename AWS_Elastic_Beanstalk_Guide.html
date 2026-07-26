@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AWS Elastic Beanstalk — Field Guide &amp; Interview Reference</title>
+<style>
+  :root{
+    --bg:#EEF1F3; --bg-raised:#FFFFFF; --bg-sunken:#E3E8EB;
+    --ink:#16202B; --ink-soft:#4A5A68; --ink-faint:#7C8B98;
+    --rule:#CCD5DC; --rule-soft:#DEE4E9;
+    --accent:#B9691F; --accent-ink:#7A4A17; --accent-bg:#F4E3CD;
+    --good:#1F7A63; --good-bg:#D9EEE7;
+    --warn:#A83B2C; --warn-bg:#F5DEDA;
+    --grid: rgba(22,32,43,0.055);
+    --shadow: 0 1px 2px rgba(22,32,43,0.06), 0 6px 20px rgba(22,32,43,0.05);
+    --code-bg:#0F1720; --code-ink:#D9E2E9; --code-accent:#E0994A;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#10161D; --bg-raised:#161E27; --bg-sunken:#0C1117;
+      --ink:#E7ECF1; --ink-soft:#9DACB9; --ink-faint:#6E7C88;
+      --rule:#2A3540; --rule-soft:#212B34;
+      --accent:#E0994A; --accent-ink:#F3C286; --accent-bg:#3A2A14;
+      --good:#4FBFA0; --good-bg:#123028;
+      --warn:#E0776A; --warn-bg:#3A1A15;
+      --grid: rgba(231,236,241,0.06);
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+      --code-bg:#0A0F14; --code-ink:#DCE6EC; --code-accent:#F0B672;
+    }
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+    font-size:16.5px; line-height:1.6;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  ::selection{ background:var(--accent-bg); color:var(--accent-ink); }
+  a{ color:var(--accent-ink); }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  h1,h2,h3,h4{
+    font-family: "Avenir Next", "Century Gothic", Futura, "Segoe UI", system-ui, sans-serif;
+    font-weight:700; color:var(--ink); text-wrap:balance; margin:0;
+  }
+  code, .mono, .kbd, table.data{
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  .eyebrow{
+    font-family:"Avenir Next","Century Gothic",Futura,"Segoe UI",system-ui,sans-serif;
+    font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent-ink); font-weight:700;
+  }
+
+  /* ===== shell layout ===== */
+  .shell{ display:flex; max-width:1240px; margin:0 auto; align-items:flex-start; }
+  nav.toc{
+    position:sticky; top:0; width:250px; flex:0 0 250px; height:100vh;
+    overflow-y:auto; padding:34px 18px 34px 28px; border-right:1px solid var(--rule);
+  }
+  nav.toc .brand{ display:flex; align-items:center; gap:9px; margin-bottom:26px; }
+  nav.toc .brand .mark{
+    width:26px; height:26px; border:1.5px solid var(--accent); display:grid; place-items:center;
+    font-family:"Avenir Next",sans-serif; font-weight:800; font-size:12px; color:var(--accent-ink);
+    transform:rotate(45deg); flex:0 0 auto;
+  }
+  nav.toc .brand .mark span{ transform:rotate(-45deg); }
+  nav.toc .brand b{ font-family:"Avenir Next","Century Gothic",sans-serif; font-size:14.5px; letter-spacing:.02em; }
+  nav.toc ol{ list-style:none; margin:0; padding:0; counter-reset:toc; }
+  nav.toc li{ counter-increment:toc; margin:0; }
+  nav.toc a{
+    display:flex; gap:9px; padding:7px 8px; margin:1px 0; border-radius:2px;
+    text-decoration:none; color:var(--ink-soft); font-size:13.6px; line-height:1.35;
+  }
+  nav.toc a:hover{ background:var(--bg-sunken); color:var(--ink); }
+  nav.toc a::before{
+    content: counter(toc, decimal-leading-zero); font-family:"SFMono-Regular",Consolas,monospace;
+    color:var(--ink-faint); font-size:11.5px; padding-top:1px;
+  }
+  nav.toc .toc-foot{ margin-top:22px; padding-top:16px; border-top:1px solid var(--rule); font-size:12px; color:var(--ink-faint); font-family:"Avenir Next",sans-serif; }
+
+  main{ flex:1 1 auto; min-width:0; padding:34px 40px 90px; }
+
+  /* ===== hero ===== */
+  .hero{ max-width:920px; margin:6px auto 8px; }
+  .hero .kicker{ display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  .hero .kicker .rule{ height:1px; flex:1 1 auto; background:var(--rule); }
+  .hero h1{ font-size:40px; line-height:1.08; letter-spacing:-.01em; margin:6px 0 16px; max-width:15ch; }
+  .hero .dek{ font-size:18px; color:var(--ink-soft); max-width:56ch; margin:0 0 22px; }
+  .badges{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+  .badge{
+    font-family:"Avenir Next","Century Gothic",sans-serif; font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; padding:6px 11px; border:1px solid var(--rule); color:var(--ink-soft);
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .badge.on{ border-color:var(--accent); color:var(--accent-ink); background:var(--accent-bg); }
+  .badge.good{ border-color:var(--good); color:var(--good); background:var(--good-bg); }
+
+  /* ===== sections ===== */
+  section{ padding:56px 0; border-top:1px solid var(--rule); }
+  section:first-of-type{ border-top:none; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:22px; }
+  .sec-num{ font-family:"SFMono-Regular",Consolas,monospace; color:var(--accent-ink); font-size:13px; }
+  h2.sec-title{ font-size:26px; letter-spacing:-.01em; }
+  p{ margin:0 0 15px; max-width:66ch; }
+  .lede{ font-size:17.5px; color:var(--ink-soft); }
+  ul.plain, ol.plain{ margin:0 0 16px; padding-left:22px; }
+  ul.plain li, ol.plain li{ margin-bottom:8px; max-width:64ch; }
+  strong{ color:var(--ink); }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media (max-width: 720px){ .grid2, .grid3{ grid-template-columns:1fr; } }
+
+  .card{ background:var(--bg-raised); border:1px solid var(--rule); padding:20px 22px; box-shadow:var(--shadow); }
+  .card h3{ font-size:15.5px; margin-bottom:8px; }
+  .card p{ font-size:14.8px; margin-bottom:0; color:var(--ink-soft); }
+  .card .tag{ font-family:"SFMono-Regular",monospace; font-size:11px; color:var(--accent-ink); display:block; margin-bottom:6px; letter-spacing:.03em; }
+
+  .callout{
+    border-left:3px solid var(--accent); background:var(--accent-bg); padding:16px 20px;
+    margin:20px 0; font-size:14.8px;
+  }
+  .callout.good{ border-color:var(--good); background:var(--good-bg); }
+  .callout.warn{ border-color:var(--warn); background:var(--warn-bg); }
+  .callout p{ margin:0; max-width:none; }
+  .callout .eyebrow{ display:block; margin-bottom:6px; }
+
+  /* ===== tables ===== */
+  .tbl-wrap{ overflow-x:auto; margin:8px 0 22px; border:1px solid var(--rule); }
+  table.data{ width:100%; border-collapse:collapse; font-size:13.6px; min-width:560px; }
+  table.data caption{ text-align:left; padding:10px 14px; font-family:"Avenir Next",sans-serif; font-size:12px; color:var(--ink-faint); background:var(--bg-sunken); border-bottom:1px solid var(--rule); }
+  table.data th, table.data td{ text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule-soft); vertical-align:top; }
+  table.data thead th{
+    font-family:"Avenir Next","Century Gothic",sans-serif; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-faint); background:var(--bg-sunken); border-bottom:1px solid var(--rule);
+  }
+  table.data tbody tr:last-child td{ border-bottom:none; }
+  table.data tbody tr:hover{ background:var(--bg-sunken); }
+  table.data td.num{ font-variant-numeric:tabular-nums; }
+  .pill{ display:inline-block; padding:2px 8px; font-size:11px; font-family:"Avenir Next",sans-serif; letter-spacing:.03em; border:1px solid currentColor; }
+  .pill.good{ color:var(--good); background:var(--good-bg); border-color:var(--good); }
+  .pill.warn{ color:var(--warn); background:var(--warn-bg); border-color:var(--warn); }
+  .pill.mid{ color:var(--accent-ink); background:var(--accent-bg); border-color:var(--accent); }
+
+  /* ===== code blocks ===== */
+  pre{
+    background:var(--code-bg); color:var(--code-ink); padding:16px 18px; overflow-x:auto;
+    font-size:13px; line-height:1.55; margin:6px 0 20px; border:1px solid var(--rule);
+  }
+  pre code{ background:none; padding:0; color:inherit; }
+  code.inline{ background:var(--bg-sunken); padding:1px 6px; font-size:.87em; border:1px solid var(--rule-soft); }
+  .filename{ font-family:"Avenir Next",sans-serif; font-size:11px; color:var(--ink-faint); letter-spacing:.04em; margin:0 0 4px; text-transform:uppercase; }
+  .c-kw{ color:var(--code-accent); }
+  .c-cm{ color:var(--ink-faint); }
+  .c-str{ color:#8FB89A; }
+
+  /* ===== schematic diagram ===== */
+  .schematic{
+    border:1px solid var(--rule); background:var(--bg-raised); padding:28px 24px; margin:10px 0 24px;
+    display:flex; align-items:center; gap:0; overflow-x:auto;
+  }
+  .sch-node{ flex:0 0 auto; text-align:center; padding:0 6px; }
+  .sch-box{
+    border:1.5px solid var(--ink-soft); padding:12px 14px; min-width:104px; background:var(--bg);
+    font-family:"Avenir Next","Century Gothic",sans-serif; font-size:12px; font-weight:700; letter-spacing:.02em;
+  }
+  .sch-box.accent{ border-color:var(--accent); color:var(--accent-ink); }
+  .sch-sub{ font-family:"SFMono-Regular",monospace; font-size:10px; color:var(--ink-faint); margin-top:6px; }
+  .sch-arrow{ flex:0 0 auto; width:34px; height:1px; background:var(--rule); position:relative; align-self:center; margin-top:-14px; }
+  .sch-arrow::after{ content:""; position:absolute; right:0; top:-3px; border:4px solid transparent; border-left-color:var(--rule); }
+  .sch-stack{ display:flex; flex-direction:column; gap:6px; }
+
+  /* ===== Q&A accordions ===== */
+  .qa-cat{ margin-bottom:30px; }
+  .qa-cat > h3{ font-size:14px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-family:"Avenir Next",sans-serif; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+  .qa-cat > h3 .rule{ height:1px; flex:1; background:var(--rule); }
+  details.qa{ border-bottom:1px solid var(--rule-soft); }
+  details.qa summary{
+    list-style:none; cursor:pointer; padding:13px 4px; display:flex; gap:12px; align-items:baseline;
+    font-family:"Avenir Next","Century Gothic",sans-serif; font-weight:600; font-size:15px; color:var(--ink);
+  }
+  details.qa summary::-webkit-details-marker{ display:none; }
+  details.qa summary::before{
+    content:"+"; font-family:"SFMono-Regular",monospace; color:var(--accent-ink); font-weight:700; flex:0 0 auto; width:14px;
+  }
+  details.qa[open] summary::before{ content:"–"; }
+  details.qa .qa-a{ padding:0 4px 16px 26px; font-size:14.8px; color:var(--ink-soft); max-width:66ch; }
+  details.qa .qa-a p{ margin:0; }
+
+  /* ===== cheat sheet ===== */
+  .cheat-grid{ display:grid; grid-template-columns: 1.15fr 1fr; gap:20px; }
+  @media (max-width:720px){ .cheat-grid{ grid-template-columns:1fr; } }
+  .fact-list{ list-style:none; margin:0; padding:0; }
+  .fact-list li{ display:flex; gap:12px; padding:9px 0; border-bottom:1px solid var(--rule-soft); font-size:14px; }
+  .fact-list li:last-child{ border-bottom:none; }
+  .fact-list .k{ flex:0 0 40%; color:var(--ink-faint); font-family:"Avenir Next",sans-serif; font-size:12.5px; }
+  .fact-list .v{ flex:1; }
+
+  footer{ border-top:1px solid var(--rule); padding:40px 0 10px; }
+  footer .src-list{ columns:2; column-gap:32px; font-size:13px; color:var(--ink-soft); }
+  @media (max-width:720px){ footer .src-list{ columns:1; } }
+  footer .src-list li{ break-inside:avoid; margin-bottom:8px; }
+  footer .fine{ margin-top:26px; font-size:12px; color:var(--ink-faint); font-family:"Avenir Next",sans-serif; }
+
+  /* mobile: collapse sidebar */
+  @media (max-width: 980px){
+    .shell{ flex-direction:column; }
+    nav.toc{ position:static; width:100%; flex:none; height:auto; border-right:none; border-bottom:1px solid var(--rule);
+      padding:18px 20px; }
+    nav.toc ol{ display:flex; flex-wrap:wrap; gap:2px 4px; }
+    nav.toc li{ flex:0 0 auto; }
+    main{ padding:30px 20px 70px; }
+    .hero h1{ font-size:30px; }
+    .grid2{ grid-template-columns:1fr; }
+  }
+  @media (prefers-reduced-motion: reduce){ *{ scroll-behavior:auto !important; } }
+  html{ scroll-behavior:smooth; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="toc" aria-label="Table of contents">
+    <div class="brand">
+      <div class="mark"><span>&beta;</span></div>
+      <b>EB FIELD GUIDE</b>
+    </div>
+    <ol>
+      <li><a href="#overview">What it is</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#deployment">Deployment policies</a></li>
+      <li><a href="#pricing">Pricing &amp; free tier</a></li>
+      <li><a href="#comparison">EB vs. the fleet</a></li>
+      <li><a href="#tradeoffs">Pros, cons, fit</a></li>
+      <li><a href="#handson">Deploy this app</a></li>
+      <li><a href="#interview">Interview Q&amp;A</a></li>
+      <li><a href="#cheatsheet">Cheat sheet</a></li>
+      <li><a href="#sources">Sources</a></li>
+    </ol>
+    <div class="toc-foot">42 interview questions &middot; 11 sections<br>reading time &asymp; 22 min</div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <div class="kicker"><span class="eyebrow">AWS &middot; Compute &middot; PaaS</span><span class="rule"></span></div>
+      <h1>Elastic Beanstalk, end to end</h1>
+      <p class="dek">What it actually does under the hood, what it costs (spoiler: the service itself is free &mdash; your EC2 isn't), and a full interview drill covering architecture, deployment policies, and the "why not just use X" questions that trip people up.</p>
+      <div class="badges">
+        <span class="badge on">Platform-as-a-Service</span>
+        <span class="badge good">No charge for the service itself</span>
+        <span class="badge">8 language platforms + Docker</span>
+        <span class="badge">You keep root access</span>
+      </div>
+    </div>
+
+    <!-- 1 OVERVIEW -->
+    <section id="overview">
+      <div class="sec-head"><span class="sec-num">&sect;01</span><h2 class="sec-title">What Elastic Beanstalk is</h2></div>
+      <p class="lede">Elastic Beanstalk (EB) is AWS's <strong>application orchestration layer</strong>: you hand it a zip of your code, and it provisions and wires together the EC2 instances, Auto Scaling group, load balancer, security groups, and CloudWatch alarms needed to run it &mdash; then keeps managing that infrastructure as you ship new versions.</p>
+      <p>It isn't a new compute primitive. Under the hood an EB "environment" is ordinary EC2, an ordinary Application Load Balancer, and an ordinary Auto Scaling group, all provisioned via CloudFormation on your behalf. What EB adds is the opinionated glue: a standard way to package a release, a health-reporting agent on every instance, a rotation of deployment strategies, and a CLI/console that turns a dozen manual console clicks into <code class="inline">eb create</code>.</p>
+      <div class="grid3">
+        <div class="card"><span class="tag">YOU PROVIDE</span><h3>Application code</h3><p>A source bundle (zip) or Docker image, plus optional config in <code class="inline">.ebextensions/</code> or <code class="inline">.platform/</code>.</p></div>
+        <div class="card"><span class="tag">EB PROVIDES</span><h3>Running infrastructure</h3><p>EC2 + ASG + ALB + security groups + CloudWatch alarms + an S3 bucket holding every app version you've deployed.</p></div>
+        <div class="card"><span class="tag">YOU RETAIN</span><h3>Full control</h3><p>Every resource EB creates is visible and editable in its own console &mdash; nothing is hidden or locked away.</p></div>
+      </div>
+    </section>
+
+    <!-- 2 HOW IT WORKS -->
+    <section id="how-it-works">
+      <div class="sec-head"><span class="sec-num">&sect;02</span><h2 class="sec-title">How it works, step by step</h2></div>
+      <p>Two vocabularies get you through almost every EB workflow: the <strong>console path</strong> (click-driven, good for first launches) and the <strong>EB CLI path</strong> (<code class="inline">eb</code> command, good for repeatable deploys). Both do the same five things underneath.</p>
+      <ol class="plain">
+        <li><strong>Create an application</strong> &mdash; a logical container/namespace for your project (e.g. <code class="inline">student-score-predictor</code>).</li>
+        <li><strong>Upload a version</strong> &mdash; EB zips your source, stores it in an EB-managed S3 bucket, and labels it a numbered/tagged <em>application version</em>.</li>
+        <li><strong>Launch an environment</strong> &mdash; you pick a platform (Python 3.12, Node 20, Docker, &hellip;) and a tier (Web Server or Worker); EB runs a CloudFormation stack that stands up EC2, ASG, ALB, and security groups.</li>
+        <li><strong>Deploy</strong> &mdash; EB pushes the chosen application version onto the environment's instances using whichever deployment policy you've configured (&sect;04).</li>
+        <li><strong>Manage</strong> &mdash; EB continuously polls an on-instance health agent and CloudWatch metrics, feeding the environment's traffic-light health status and driving Auto Scaling.</li>
+      </ol>
+      <div class="tbl-wrap">
+        <table class="data">
+          <caption>Core EB CLI commands</caption>
+          <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td class="num"><code>eb init</code></td><td>Interactively configure region, platform, and app name; writes <code class="inline">.elasticbeanstalk/config.yml</code>.</td></tr>
+            <tr><td class="num"><code>eb create &lt;env&gt;</code></td><td>Provisions a brand-new environment (EC2/ASG/ALB) and deploys the current source.</td></tr>
+            <tr><td class="num"><code>eb deploy</code></td><td>Zips the working directory and deploys it to the current environment as a new version.</td></tr>
+            <tr><td class="num"><code>eb status</code></td><td>Shows environment health, running version, and endpoint URL.</td></tr>
+            <tr><td class="num"><code>eb logs</code></td><td>Pulls the last-rotated instance logs (or <code class="inline">--all</code> for the full bundle) to your machine.</td></tr>
+            <tr><td class="num"><code>eb ssh</code></td><td>Opens an SSH session onto an environment instance (key pair must be configured).</td></tr>
+            <tr><td class="num"><code>eb config</code></td><td>Opens the environment's saved configuration for editing (instance type, scaling, env vars&hellip;).</td></tr>
+            <tr><td class="num"><code>eb swap</code></td><td>Swaps the CNAMEs of two environments &mdash; the mechanism behind blue/green deploys.</td></tr>
+            <tr><td class="num"><code>eb terminate</code></td><td>Tears down the environment and every resource EB created for it.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="filename">.ebextensions/01-env.config</div>
+      <pre><code><span class="c-cm"># declarative config EB merges into the environment on every deploy</span>
+<span class="c-kw">option_settings</span>:
+  <span class="c-kw">aws:elasticbeanstalk:application:environment</span>:
+    <span class="c-kw">MODEL_PATH</span>: <span class="c-str">"/var/app/current/artifacts/model.pkl"</span>
+    <span class="c-kw">FLASK_ENV</span>: <span class="c-str">"production"</span>
+  <span class="c-kw">aws:autoscaling:launchconfiguration</span>:
+    <span class="c-kw">InstanceType</span>: <span class="c-str">t3.small</span></code></pre>
+    </section>
+
+    <!-- 3 ARCHITECTURE -->
+    <section id="architecture">
+      <div class="sec-head"><span class="sec-num">&sect;03</span><h2 class="sec-title">Architecture &amp; core concepts</h2></div>
+      <p>Three nouns cover the object model: <strong>Application</strong> &rarr; <strong>Application Version</strong> &rarr; <strong>Environment</strong>. An application can have many versions (your deploy history) and many environments (e.g. <code class="inline">staging</code>, <code class="inline">prod</code>) &mdash; any version can run in any environment.</p>
+      <p class="lede">What a Web Server tier environment looks like on the wire:</p>
+      <div class="schematic">
+        <div class="sch-node"><div class="sch-box">Route 53</div><div class="sch-sub">DNS</div></div>
+        <div class="sch-arrow"></div>
+        <div class="sch-node"><div class="sch-box accent">Application<br>Load Balancer</div><div class="sch-sub">HTTPS &middot; health checks</div></div>
+        <div class="sch-arrow"></div>
+        <div class="sch-node">
+          <div class="sch-stack">
+            <div class="sch-box">EC2 &middot; app + agent</div>
+            <div class="sch-box">EC2 &middot; app + agent</div>
+            <div class="sch-box">EC2 &middot; app + agent</div>
+          </div>
+          <div class="sch-sub">Auto Scaling Group</div>
+        </div>
+        <div class="sch-arrow"></div>
+        <div class="sch-node"><div class="sch-box">CloudWatch<br>+ S3 (versions/logs)</div><div class="sch-sub">metrics &middot; alarms</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>Web server tier</h3>
+          <p>Standard request/response environment sitting behind an ALB. This is what nearly every EB app uses &mdash; a Flask, Django, Express, or Spring app answering HTTP.</p>
+        </div>
+        <div class="card">
+          <h3>Worker tier</h3>
+          <p>No load balancer. Instances poll an EB-managed SQS queue and run a background daemon &mdash; built for async jobs (email sends, report generation, model batch scoring).</p>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3>Saved configuration</h3>
+          <p>A snapshot of an environment's settings (instance type, scaling limits, env vars) you can save, version-control, and reapply to spin up an identical environment elsewhere.</p>
+        </div>
+        <div class="card">
+          <h3>.ebextensions / .platform</h3>
+          <p><code class="inline">.ebextensions/*.config</code> (YAML) customizes option settings, packages, and commands. Newer <code class="inline">.platform/hooks/</code> scripts give you pre/post-deploy shell hooks.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 DEPLOYMENT POLICIES -->
+    <section id="deployment">
+      <div class="sec-head"><span class="sec-num">&sect;04</span><h2 class="sec-title">Deployment policies</h2></div>
+      <p>The deployment policy is the one setting most likely to come up as a scenario question, because it's a genuine engineering trade-off between <strong>downtime</strong>, <strong>cost</strong>, and <strong>rollback safety</strong> &mdash; not a solved problem with one right answer.</p>
+      <div class="tbl-wrap">
+        <table class="data">
+          <caption>Choosing a deployment policy</caption>
+          <thead><tr><th>Policy</th><th>Downtime</th><th>Extra cost</th><th>Rollback</th><th>Use when</th></tr></thead>
+          <tbody>
+            <tr><td><strong>All at once</strong></td><td><span class="pill warn">Yes</span></td><td>None</td><td>Manual redeploy</td><td>Dev/test environments where a blip is fine.</td></tr>
+            <tr><td><strong>Rolling</strong></td><td><span class="pill mid">Reduced capacity</span></td><td>None</td><td>Slow (roll forward again)</td><td>Prod, cost-sensitive, can tolerate brief reduced capacity.</td></tr>
+            <tr><td><strong>Rolling + additional batch</strong></td><td><span class="pill good">None</span></td><td>1 extra batch, temporarily</td><td>Slow</td><td>Same as rolling, but capacity must never dip.</td></tr>
+            <tr><td><strong>Immutable</strong></td><td><span class="pill good">None</span></td><td>Full new ASG, briefly (2&times;)</td><td>Fast &mdash; just terminate new ASG</td><td>Prod deploys where a bad build must never touch live traffic.</td></tr>
+            <tr><td><strong>Traffic splitting</strong></td><td><span class="pill good">None</span></td><td>Full new ASG, briefly</td><td>Instant &mdash; shift % back</td><td>Canary-testing a risky release against a slice of real traffic.</td></tr>
+            <tr><td><strong>Blue/green</strong> <span class="pill mid">manual</span></td><td><span class="pill good">None</span></td><td>Second full environment</td><td>Instant &mdash; swap back</td><td>Major version jumps, schema changes, "I want a full dress rehearsal."</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        <span class="eyebrow">Mechanism note</span>
+        <p><strong>Immutable</strong> and <strong>traffic-splitting</strong> both launch an entirely new Auto Scaling group alongside the old one and health-check it before it takes real traffic &mdash; that's what makes them safe. The difference is immutable cuts over 100% at once after checks pass; traffic-splitting ramps a configurable percentage over an evaluation window first. <strong>Blue/green</strong> isn't a policy EB applies automatically &mdash; it's a pattern you execute yourself by standing up a second environment and running <code class="inline">eb swap</code> to exchange CNAMEs once you're satisfied.</p>
+      </div>
+    </section>
+
+    <!-- 5 PRICING -->
+    <section id="pricing">
+      <div class="sec-head"><span class="sec-num">&sect;05</span><h2 class="sec-title">Pricing &amp; the free tier</h2></div>
+      <div class="callout good">
+        <span class="eyebrow">The one-line answer</span>
+        <p>Elastic Beanstalk <strong>itself carries no additional charge</strong> &mdash; AWS doesn't bill for the orchestration layer. You pay only for the underlying resources it creates on your behalf: EC2 instance-hours, the Application Load Balancer, S3 storage for versions/logs, CloudWatch alarms, and (if you add one) RDS.</p>
+      </div>
+      <p>That makes "is Elastic Beanstalk free?" a bit of a trick question in an interview &mdash; the correct answer distinguishes the <em>service</em> (free) from the <em>infrastructure it provisions</em> (billed normally, same as if you'd built it by hand).</p>
+      <div class="tbl-wrap">
+        <table class="data">
+          <caption>AWS Free Tier coverage relevant to an EB environment</caption>
+          <thead><tr><th>Resource</th><th>Free allowance</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>EC2</td><td class="num">750 hrs/mo &middot; t2.micro or t3.micro</td><td>Enough for one instance running continuously.</td></tr>
+            <tr><td>Elastic Load Balancing</td><td class="num">750 hrs/mo + 15 LCUs</td><td>Covers a single ALB fronting the environment.</td></tr>
+            <tr><td>S3</td><td class="num">5 GB storage</td><td>Holds your app version bundles and logs.</td></tr>
+            <tr><td>RDS</td><td class="num">750 hrs/mo &middot; db.t2/t3.micro, 20 GB</td><td>Only relevant if your environment is linked to an RDS database.</td></tr>
+            <tr><td>CloudWatch</td><td class="num">10 custom metrics + basic alarms</td><td>EB's default health/scale alarms fit comfortably inside this.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <span class="eyebrow">Worth knowing in 2026</span>
+        <p>AWS accounts created <strong>before July 15, 2025</strong> keep the classic 12-months-free structure above. Accounts created <strong>after</strong> that date follow AWS's newer free-tier model &mdash; a bundle of "Always Free" services plus a time-limited credit balance &mdash; so the exact free EC2/ELB hours a brand-new account gets may differ. Always check the Billing &rarr; Free Tier page for the account in question rather than quoting a fixed number.</p>
+      </div>
+      <p><strong>Illustrative</strong> on-demand costs beyond the free tier (us-east-1, subject to change &mdash; never quote these as current fact without checking the AWS Pricing page):</p>
+      <ul class="plain">
+        <li><code class="inline">t3.micro</code> Linux EC2 &asymp; $0.0104&ndash;0.0116/hr</li>
+        <li>Application Load Balancer &asymp; $0.0225/hr + per-LCU processing charge</li>
+        <li>S3 Standard storage &asymp; $0.023/GB-month</li>
+      </ul>
+      <p>Two cost traps that are common interview "gotchas": <strong>Immutable and traffic-splitting deploys briefly double your instance count</strong> (a second ASG runs alongside the first), and a <strong>multi-AZ, load-balanced environment</strong> is EB's default recommended shape for prod &mdash; appropriate for real traffic, but overkill (and non-free) for a personal project, where a single-instance, no-load-balancer environment is cheaper and still fully supported.</p>
+    </section>
+
+    <!-- 6 COMPARISON -->
+    <section id="comparison">
+      <div class="sec-head"><span class="sec-num">&sect;06</span><h2 class="sec-title">EB vs. the rest of the AWS compute fleet</h2></div>
+      <p>The recurring interview pattern is "why would you use EB instead of X" &mdash; the honest answer is always about where you want to spend engineering effort: infrastructure control vs. shipping speed.</p>
+      <div class="tbl-wrap">
+        <table class="data">
+          <caption>Where Elastic Beanstalk sits among AWS compute options</caption>
+          <thead><tr><th>Service</th><th>Model</th><th>Ops burden</th><th>Best fit</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Elastic Beanstalk</strong></td><td>PaaS over EC2</td><td>Low</td><td>Standard web apps/APIs you want deployed fast with room to customize later.</td></tr>
+            <tr><td>EC2 (raw)</td><td>IaaS</td><td>High</td><td>Full control &mdash; custom networking, non-standard runtimes, fine-grained tuning.</td></tr>
+            <tr><td>Lightsail</td><td>Simplified VPS</td><td>Low</td><td>Small sites/blogs, flat predictable pricing, minimal AWS knowledge needed.</td></tr>
+            <tr><td>ECS / Fargate</td><td>Container orchestration</td><td>Medium</td><td>Microservices, teams already containerizing, need for fine scheduling control.</td></tr>
+            <tr><td>Lambda / App Runner</td><td>Serverless</td><td>Very low</td><td>Event-driven or bursty workloads; App Runner specifically for containerized web services with true scale-to-zero.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>A useful framing to say out loud in an interview: <strong>EB automates infrastructure you still own</strong> (you can see and edit every EC2/ALB/ASG resource it made); <strong>Lambda/App Runner abstract the infrastructure away entirely</strong> (there's no server to look at); <strong>ECS/Fargate sits in between</strong>, giving you container-level control without EC2 management (on Fargate) or with it (on EC2 launch type).</p>
+    </section>
+
+    <!-- 7 PROS/CONS -->
+    <section id="tradeoffs">
+      <div class="sec-head"><span class="sec-num">&sect;07</span><h2 class="sec-title">Pros, cons, and when to skip it</h2></div>
+      <div class="grid2">
+        <div class="card">
+          <span class="tag" style="color:var(--good)">STRENGTHS</span>
+          <p>Fast path from code to a load-balanced, auto-scaled, HTTPS-capable URL. Zero lock-in &mdash; every resource is standard EC2/ALB/ASG you can reach directly. Built-in deployment strategies remove a lot of hand-rolled rollout scripting. Free to use; you're only ever paying standard resource rates.</p>
+        </div>
+        <div class="card">
+          <span class="tag" style="color:var(--warn)">LIMITATIONS</span>
+          <p>Coarser-grained than hand-built infra &mdash; some networking/scaling edge cases need <code class="inline">.ebextensions</code> workarounds rather than a console toggle. Not a natural fit for many independently-scaled microservices (that's ECS/EKS territory). Environment updates can be slower than a container redeploy. Config drift is possible if someone edits provisioned resources directly instead of through EB.</p>
+        </div>
+      </div>
+      <p><strong>Rule of thumb:</strong> reach for EB when the shape of your app is "a web service (or worker) that needs to scale," and you'd rather not hand-assemble the ALB/ASG/CloudWatch wiring yourself. Reach past it &mdash; to ECS/EKS for many small services, or Lambda for spiky/event-driven work &mdash; once your architecture stops looking like "one app, scaled out."</p>
+    </section>
+
+    <!-- 8 HANDS ON -->
+    <section id="handson">
+      <div class="sec-head"><span class="sec-num">&sect;08</span><h2 class="sec-title">Worked example: deploying this repo's Flask app</h2></div>
+      <p>This project already has the shape EB expects for a Python web-server tier: a Flask app (<code class="inline">app/app1.py</code>) with a <code class="inline">requirements.txt</code>. Here's the concrete path from local code to a public EB URL.</p>
+      <ol class="plain">
+        <li><strong>Give EB an entry point.</strong> The modern Python platform looks for a WSGI callable; simplest is a top-level <code class="inline">application.py</code> that does <code class="inline">from app.app1 import app as application</code>, or point the platform at <code class="inline">app.app1:app</code> via a <code class="inline">Procfile</code>.</li>
+        <li><strong>Add a Procfile</strong> (recommended over relying on default detection):</li>
+      </ol>
+      <div class="filename">Procfile</div>
+      <pre><code>web: gunicorn --bind :8000 --workers 3 app.app1:app</code></pre>
+      <p>(add <code class="inline">gunicorn</code> to <code class="inline">requirements.txt</code> &mdash; the Flask dev server in <code class="inline">app.run()</code> shouldn't serve production traffic.)</p>
+      <ol class="plain" start="3">
+        <li><strong>Initialize EB</strong> from the project root:</li>
+      </ol>
+      <pre><code>eb init -p python-3.12 student-score-predictor --region ap-south-1
+eb create student-score-predictor-env --single</code></pre>
+      <p><code class="inline">--single</code> skips the load balancer/multi-AZ setup for a single free-tier-eligible instance &mdash; appropriate for a portfolio/demo deployment; drop it for a prod-shaped environment with an ALB and Auto Scaling.</p>
+      <ol class="plain" start="4">
+        <li><strong>Ship the trained model artifact.</strong> Either commit small <code class="inline">artifacts/model.pkl</code>/<code class="inline">preprocessor.pkl</code> files into the deploy bundle, or set an <code class="inline">.ebextensions</code> env var pointing at an S3 location and fetch it in a <code class="inline">.platform/hooks/predeploy</code> script &mdash; cleaner once the model grows past a few MB.</li>
+        <li><strong>Deploy and iterate:</strong></li>
+      </ol>
+      <pre><code>eb deploy
+eb open      <span class="c-cm"># opens the live URL in a browser</span>
+eb logs      <span class="c-cm"># tail instance logs if predict_pipeline errors out</span></code></pre>
+      <p>From here, switching the environment's deployment policy to <strong>immutable</strong> (&sect;04) before adding real users is the natural next step &mdash; it costs one extra instance-hour per deploy and buys a much safer release process than the default rolling policy.</p>
+    </section>
+
+    <!-- 9 INTERVIEW Q&A -->
+    <section id="interview">
+      <div class="sec-head"><span class="sec-num">&sect;09</span><h2 class="sec-title">Interview question bank &mdash; 42 questions</h2></div>
+      <p class="lede">Organized the way a panel actually escalates: fundamentals &rarr; architecture &rarr; deployment/scaling &rarr; operations &rarr; security &rarr; cost &rarr; scenario &rarr; comparison. Click any question to expand its answer.</p>
+
+      <div class="qa-cat">
+        <h3>Fundamentals <span class="rule"></span></h3>
+        <details class="qa"><summary>What is AWS Elastic Beanstalk?</summary><div class="qa-a"><p>A PaaS orchestration service: you upload application code and EB provisions, deploys to, and manages the EC2/ALB/Auto Scaling/CloudWatch infrastructure needed to run it, while leaving every resource it creates directly accessible to you.</p></div></details>
+        <details class="qa"><summary>Is Elastic Beanstalk PaaS or IaaS?</summary><div class="qa-a"><p>PaaS by behavior &mdash; you don't provision servers yourself &mdash; but it's built entirely on IaaS primitives (EC2, ALB, ASG) that remain visible and editable, which is why some call it "PaaS with an IaaS escape hatch."</p></div></details>
+        <details class="qa"><summary>How does EB differ from CloudFormation?</summary><div class="qa-a"><p>CloudFormation is a general infrastructure-as-code engine &mdash; you author the full resource graph yourself. EB is opinionated and application-focused: it generates and manages a CloudFormation stack for you based on a platform choice and a code bundle, trading flexibility for speed. In fact, EB environments <em>are</em> CloudFormation stacks under the hood.</p></div></details>
+        <details class="qa"><summary>How does EB differ from OpsWorks?</summary><div class="qa-a"><p>OpsWorks is a Chef/Puppet-based configuration-management service for orchestrating custom server layers and lifecycle events &mdash; more control, more setup. EB trades that flexibility for a much faster, more opinionated "upload and go" workflow aimed at standard web apps.</p></div></details>
+        <details class="qa"><summary>What languages/platforms does Elastic Beanstalk support?</summary><div class="qa-a"><p>Java, .NET/.NET Core, PHP, Node.js, Python, Ruby, Go, and Docker (single- or multi-container), running on servers like Apache, Nginx, Passenger, and IIS depending on platform.</p></div></details>
+        <details class="qa"><summary>Do you lose control of the infrastructure by using EB?</summary><div class="qa-a"><p>No &mdash; every EC2 instance, load balancer, security group, and Auto Scaling group EB creates is a normal resource in your account, visible in its own console and editable directly if needed (though direct edits can drift from what EB expects, so config changes are best made through EB's saved configuration or <code class="inline">.ebextensions</code>).</p></div></details>
+      </div>
+
+      <div class="qa-cat">
+        <h3>Architecture &amp; components <span class="rule"></span></h3>
+        <details class="qa"><summary>What is an EB Application?</summary><div class="qa-a"><p>The top-level logical container for a project &mdash; it groups together application versions and the environments that run them.</p></div></details>
+        <details class="qa"><summary>What is an Application Version?</summary><div class="qa-a"><p>A specific, immutable deployable build of your code, stored as a labeled bundle in an EB-managed S3 bucket. Any version can be deployed to any environment under the same application.</p></div></details>
+        <details class="qa"><summary>What is an Environment?</summary><div class="qa-a"><p>A running collection of AWS resources (EC2/ASG, optionally ALB) executing one application version, configured by a specific platform and configuration set &mdash; e.g. a <code class="inline">staging</code> and a <code class="inline">prod</code> environment for the same application.</p></div></details>
+        <details class="qa"><summary>What's the difference between Web Server tier and Worker tier?</summary><div class="qa-a"><p>Web Server tier serves HTTP requests behind an Application Load Balancer. Worker tier has no load balancer; instances instead poll an EB-managed SQS queue and process messages via a daemon &mdash; built for asynchronous background jobs.</p></div></details>
+        <details class="qa"><summary>What is a saved configuration / configuration template?</summary><div class="qa-a"><p>A reusable snapshot of an environment's settings (instance type, scaling bounds, environment variables, etc.) that can be applied when creating new environments, so staging and prod can be kept consistent.</p></div></details>
+        <details class="qa"><summary>What is .ebextensions used for?</summary><div class="qa-a"><p>A folder of YAML/JSON config files deployed alongside your app that let you set option settings, install OS packages, run commands, and create files/resources during environment provisioning &mdash; the primary way to customize EB beyond the console.</p></div></details>
+        <details class="qa"><summary>What AWS resources does a default Web Server environment create?</summary><div class="qa-a"><p>An Auto Scaling group of EC2 instances, an Application (or Classic) Load Balancer, security groups, an S3 bucket for versions/logs, and a set of CloudWatch alarms driving scaling and health.</p></div></details>
+      </div>
+
+      <div class="qa-cat">
+        <h3>Deployment &amp; scaling <span class="rule"></span></h3>
+        <details class="qa"><summary>What deployment policies does EB support?</summary><div class="qa-a"><p>All at once, Rolling, Rolling with additional batch, Immutable, and Traffic Splitting &mdash; plus the manual Blue/Green pattern via environment swap. See the comparison table in &sect;04.</p></div></details>
+        <details class="qa"><summary>Explain Rolling vs. Rolling with additional batch.</summary><div class="qa-a"><p>Rolling updates instances in batches, taking each batch out of service during its update &mdash; so total capacity briefly dips. Rolling with additional batch first launches one extra batch of new instances, keeping full capacity throughout, at the cost of running slightly more instances temporarily.</p></div></details>
+        <details class="qa"><summary>Why are Immutable deployments considered safer?</summary><div class="qa-a"><p>They launch a complete second Auto Scaling group running the new version, health-check it fully before routing any production traffic to it, and simply terminate it if checks fail &mdash; the original instances are never touched, so a bad build can't take down the live environment.</p></div></details>
+        <details class="qa"><summary>What is a Traffic Splitting deployment?</summary><div class="qa-a"><p>A canary-style policy: EB stands up a new instance set (like Immutable), then routes a configurable percentage of live traffic to it for an evaluation window. If health checks fail, or you abort, traffic shifts back and the new instances are torn down &mdash; with zero downtime either way.</p></div></details>
+        <details class="qa"><summary>How does Blue/Green deployment work in EB?</summary><div class="qa-a"><p>You deploy the new version to a completely separate environment (not the live one), test it independently, then run <code class="inline">eb swap</code> to exchange the two environments' CNAMEs &mdash; instantly cutting traffic over. Rolling back is just swapping back.</p></div></details>
+        <details class="qa"><summary>How does Auto Scaling work in an EB environment?</summary><div class="qa-a"><p>EB configures a standard Auto Scaling group with CloudWatch-alarm-driven scaling policies (commonly CPU utilization, but configurable to other metrics), plus min/max instance bounds you set in the environment configuration.</p></div></details>
+        <details class="qa"><summary>How does EB's health monitoring work?</summary><div class="qa-a"><p>Basic health reporting uses ELB/EC2 status checks. Enhanced health reporting (default on newer platforms) runs an agent on each instance that reports application-level metrics (response time, request counts, process status) feeding a color-coded status: OK, Info, Warning, Degraded, Severe.</p></div></details>
+        <details class="qa"><summary>What happens if a deployment fails health checks?</summary><div class="qa-a"><p>Depends on policy: Immutable/Traffic-Splitting automatically terminate the unhealthy new instances and leave the old version serving traffic untouched. Rolling policies can be configured to roll back automatically on a set number of failures, otherwise the environment surfaces a Degraded/Severe health status for manual intervention.</p></div></details>
+      </div>
+
+      <div class="qa-cat">
+        <h3>Operations &amp; troubleshooting <span class="rule"></span></h3>
+        <details class="qa"><summary>How do you view logs from an EB environment?</summary><div class="qa-a"><p><code class="inline">eb logs</code> pulls the latest rotated logs (or a full bundle with <code class="inline">--all</code>); for continuous visibility you enable log streaming to CloudWatch Logs from the environment configuration.</p></div></details>
+        <details class="qa"><summary>Can you SSH into EB instances?</summary><div class="qa-a"><p>Yes &mdash; <code class="inline">eb ssh</code> connects to an instance directly, provided a key pair was associated at environment creation (or added afterward). Useful for reading local logs or debugging a stuck deploy hook.</p></div></details>
+        <details class="qa"><summary>How do you roll back a bad deployment?</summary><div class="qa-a"><p>Re-deploy a previous, known-good Application Version from the environment's version history (console "Application versions" or <code class="inline">eb deploy --version</code>) &mdash; EB doesn't auto-keep a "previous" pointer beyond that version history.</p></div></details>
+        <details class="qa"><summary>How do you monitor an EB environment in production?</summary><div class="qa-a"><p>Through EB's built-in health dashboard for a quick signal, backed by CloudWatch metrics/alarms and CloudWatch Logs (or a shipped-out log pipeline) for deeper investigation, same as any EC2/ALB workload.</p></div></details>
+        <details class="qa"><summary>How do you manage environment variables and secrets?</summary><div class="qa-a"><p>Simple config lives in the environment's "Software" configuration or under <code class="inline">.ebextensions</code>' <code class="inline">aws:elasticbeanstalk:application:environment</code> namespace. Real secrets shouldn't live in either &mdash; fetch them at boot from Secrets Manager or SSM Parameter Store via a <code class="inline">.platform</code> hook instead.</p></div></details>
+        <details class="qa"><summary>What's the difference between the EB Console and the EB CLI?</summary><div class="qa-a"><p>The console is click-driven and best for exploring options or one-off setup; the CLI (<code class="inline">eb</code>) is scriptable and reproducible, making it the better fit for CI/CD and repeatable local workflows &mdash; both operate on the same underlying environments.</p></div></details>
+      </div>
+
+      <div class="qa-cat">
+        <h3>Security <span class="rule"></span></h3>
+        <details class="qa"><summary>What IAM roles does EB use?</summary><div class="qa-a"><p>Two distinct roles: a <strong>service role</strong> that EB itself assumes to call other AWS APIs on your behalf (provisioning resources, monitoring), and an <strong>instance profile</strong> attached to the EC2 instances so your running application can call AWS APIs (e.g. reading from S3).</p></div></details>
+        <details class="qa"><summary>How do you enable HTTPS on an EB environment?</summary><div class="qa-a"><p>Attach an ACM certificate to the environment's load balancer listener (HTTPS on 443) via the console or <code class="inline">.ebextensions</code>; typically paired with an HTTP&rarr;HTTPS redirect rule on the ALB.</p></div></details>
+        <details class="qa"><summary>Can EB run inside a custom VPC / private subnets?</summary><div class="qa-a"><p>Yes &mdash; you can place instances in private subnets with the load balancer in public subnets (a standard pattern), configured via the environment's VPC settings at creation or in a saved configuration.</p></div></details>
+        <details class="qa"><summary>How do you restrict access to an EB environment?</summary><div class="qa-a"><p>Security groups on the ALB/instances for network-level restriction, IAM policies to control who can manage the environment itself, and &mdash; for non-public apps &mdash; putting the ALB fully in private subnets or behind a VPN/bastion.</p></div></details>
+      </div>
+
+      <div class="qa-cat">
+        <h3>Cost &amp; pricing <span class="rule"></span></h3>
+        <details class="qa"><summary>Is Elastic Beanstalk free?</summary><div class="qa-a"><p>The EB service itself has no additional charge. You pay standard rates for whatever EC2/ALB/S3/RDS resources it provisions &mdash; the same as if you'd built the environment by hand. See &sect;05.</p></div></details>
+        <details class="qa"><summary>What drives the cost of running an app on EB?</summary><div class="qa-a"><p>Mainly EC2 instance-hours and instance type, whether a load balancer is attached, data transfer, S3 storage for versions/logs, and any attached RDS database &mdash; plus a temporary doubling of instance count during Immutable/Traffic-Splitting deploys.</p></div></details>
+        <details class="qa"><summary>How would you minimize EB costs for a low-traffic app?</summary><div class="qa-a"><p>Use a single-instance environment without a load balancer (<code class="inline">eb create --single</code>) for non-critical/demo workloads, stay within a free-tier-eligible instance size, set tight Auto Scaling max bounds, and prefer Rolling over Immutable deploys if the extra-instance cost during releases matters.</p></div></details>
+      </div>
+
+      <div class="qa-cat">
+        <h3>Scenario &amp; behavioral <span class="rule"></span></h3>
+        <details class="qa"><summary>"Our last deploy caused a few minutes of user-facing downtime &mdash; how do you prevent that?"</summary><div class="qa-a"><p>Identify what policy was in use &mdash; All at once or a too-aggressive Rolling batch size are the usual culprits &mdash; and move to Immutable or Traffic Splitting so the new version is fully health-checked before it ever receives production traffic.</p></div></details>
+        <details class="qa"><summary>"Users see intermittent 502s right after a scale-out event &mdash; how do you debug it?"</summary><div class="qa-a"><p>Check whether new instances are being marked healthy by the ALB before traffic hits them (connection draining / health check grace period), inspect <code class="inline">eb logs</code> for app startup errors on the new instances, and confirm the ALB health-check path actually reflects app readiness rather than just process liveness.</p></div></details>
+        <details class="qa"><summary>"We need zero-downtime deploys with an instant rollback path &mdash; what do you pick?"</summary><div class="qa-a"><p>Immutable for zero-downtime with an automatic safety net (bad builds never reach production instances), or Traffic Splitting if you also want to canary-test against a slice of real traffic before full cutover &mdash; both allow near-instant rollback since the old instance set is untouched until cutover completes.</p></div></details>
+        <details class="qa"><summary>"How would you wire EB into a CI/CD pipeline?"</summary><div class="qa-a"><p>A pipeline (CodePipeline, GitHub Actions, Jenkins) builds/tests the app, then invokes the EB CLI or the <code class="inline">CreateApplicationVersion</code>/<code class="inline">UpdateEnvironment</code> APIs to push a new version to a target environment &mdash; typically staging first, then promoted to prod via environment swap or a second deploy step after manual/automated approval.</p></div></details>
+      </div>
+
+      <div class="qa-cat">
+        <h3>Comparison questions <span class="rule"></span></h3>
+        <details class="qa"><summary>"EB vs. raw EC2 &mdash; when would you choose each?"</summary><div class="qa-a"><p>EB when you want a standard app deployed and scaled quickly without hand-building the ALB/ASG/CloudWatch wiring. Raw EC2 when you need infrastructure that doesn't fit EB's model &mdash; unusual networking, non-standard runtimes, or very fine-grained tuning EB's abstractions get in the way of.</p></div></details>
+        <details class="qa"><summary>"EB vs. ECS/Fargate &mdash; when would you choose each?"</summary><div class="qa-a"><p>EB suits a single app (or a small number of them) that scales as one unit. ECS/Fargate fits systems decomposed into several independently-deployed, independently-scaled microservices, where container-level scheduling and service discovery matter more than a fast single-app path.</p></div></details>
+        <details class="qa"><summary>"EB vs. Lambda / App Runner &mdash; when would you choose each?"</summary><div class="qa-a"><p>Lambda/App Runner for event-driven or spiky workloads that benefit from true scale-to-zero and no server management at all. EB for workloads that run continuously and benefit from being "always warm," or that need OS-level access/long-running processes Lambda's execution model doesn't fit well.</p></div></details>
+        <details class="qa"><summary>"EB vs. Lightsail &mdash; when would you choose each?"</summary><div class="qa-a"><p>Lightsail for small sites/simple apps where flat, predictable pricing and minimal AWS knowledge matter more than scaling sophistication. EB once you need real Auto Scaling, multiple environments (staging/prod), and deployment-policy control that Lightsail doesn't offer.</p></div></details>
+      </div>
+    </section>
+
+    <!-- 10 CHEAT SHEET -->
+    <section id="cheatsheet">
+      <div class="sec-head"><span class="sec-num">&sect;10</span><h2 class="sec-title">Cheat sheet</h2></div>
+      <div class="cheat-grid">
+        <div>
+          <div class="filename">CLI quick reference</div>
+          <div class="tbl-wrap">
+            <table class="data">
+              <tbody>
+                <tr><td class="num"><code>eb init</code></td><td>configure app/platform</td></tr>
+                <tr><td class="num"><code>eb create</code></td><td>new environment</td></tr>
+                <tr><td class="num"><code>eb deploy</code></td><td>ship current code</td></tr>
+                <tr><td class="num"><code>eb status</code></td><td>health + URL</td></tr>
+                <tr><td class="num"><code>eb logs</code></td><td>pull instance logs</td></tr>
+                <tr><td class="num"><code>eb ssh</code></td><td>shell into an instance</td></tr>
+                <tr><td class="num"><code>eb config</code></td><td>edit saved config</td></tr>
+                <tr><td class="num"><code>eb swap</code></td><td>blue/green cutover</td></tr>
+                <tr><td class="num"><code>eb terminate</code></td><td>tear down environment</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div class="filename">Facts worth memorizing</div>
+          <ul class="fact-list">
+            <li><span class="k">Object model</span><span class="v">Application &rarr; Version &rarr; Environment</span></li>
+            <li><span class="k">Tiers</span><span class="v">Web Server (ALB) &middot; Worker (SQS)</span></li>
+            <li><span class="k">Safe deploy policies</span><span class="v">Immutable, Traffic Splitting</span></li>
+            <li><span class="k">Zero-downtime, full dress rehearsal</span><span class="v">Blue/Green via <code class="inline">eb swap</code></span></li>
+            <li><span class="k">Custom config</span><span class="v"><code class="inline">.ebextensions/</code>, <code class="inline">.platform/hooks/</code></span></li>
+            <li><span class="k">EB service cost</span><span class="v">$0 &mdash; pay only for provisioned resources</span></li>
+            <li><span class="k">Two IAM roles</span><span class="v">service role vs. instance profile</span></li>
+            <li><span class="k">Under the hood</span><span class="v">A CloudFormation stack of EC2/ASG/ALB</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer id="sources">
+      <div class="sec-head"><span class="sec-num">&sect;11</span><h2 class="sec-title" style="font-size:18px;">Sources</h2></div>
+      <ul class="src-list">
+        <li><a href="https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/aws-elastic-beanstalk.html">AWS Whitepaper &mdash; Elastic Beanstalk overview</a></li>
+        <li><a href="https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.rolling-version-deploy.html">AWS Docs &mdash; Deployment policies and settings</a></li>
+        <li><a href="https://aws.amazon.com/about-aws/whats-new/2020/05/aws-elastic-beanstalk-traffic-splitting-deployment-policy">AWS &mdash; Traffic Splitting deployment policy launch</a></li>
+        <li><a href="https://docs.aws.amazon.com/decision-guides/latest/lightsail-elastic-beanstalk-ec2/lightsail-elastic-beanstalk-ec2.html">AWS Decision Guide &mdash; Lightsail vs. EB vs. EC2</a></li>
+        <li><a href="https://aws.amazon.com/about-aws/whats-new/2025/07/aws-free-tier-credits-month-free-plan/">AWS &mdash; Free Tier credit/6-month plan update (2025)</a></li>
+        <li><a href="https://www.geeksforgeeks.org/devops/introduction-to-aws-elastic-beanstalk/">GeeksforGeeks &mdash; Introduction to Elastic Beanstalk</a></li>
+        <li><a href="https://jayendrapatil.com/aws-elastic-beanstalk-deployment-strategies/">Jayendra Patil &mdash; EB deployment strategies</a></li>
+        <li><a href="https://climbtheladder.com/aws-elastic-beanstalk-interview-questions/">ClimbTheLadder &mdash; EB interview questions</a></li>
+      </ul>
+      <div class="fine">Pricing figures are illustrative examples (us-east-1) captured for this guide and change over time &mdash; verify current rates on the AWS Pricing pages before quoting them. Compiled 26 Jul 2026.</div>
+    </footer>
+  </main>
+</div>
+</body>
+</html>
